@@ -15,9 +15,9 @@ class Corpus:
                 self.cooccurrence = sum_update(self.cooccurrence, counts)
                 # self.cooccurrence.update(counts)
 
-    def print(self):
+    def printCorpus(self):
         for sent in self.corpus:
-            sent.print()
+            sent.printSentence()
 
     def sent_count(self):
         print(len(self.corpus))

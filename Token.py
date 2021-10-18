@@ -5,5 +5,5 @@ class Token:
         self.lemma = lemma
         self.pos   = pos
 
-    def print(self):
+    def printToken(self):
         print(self.token, self.lemma, self.pos)

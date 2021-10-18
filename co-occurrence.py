@@ -36,7 +36,7 @@ def preprocessing(filename):
 #######################################################
 
 DOMAIN = input("Domain of interest (acad/news)? ")
-FILENAME = "coca/wlp/" + DOMAIN + "/wlp_" + DOMAIN + "_*.txt"
+FILENAME = "../coca/coca-wlp/" + DOMAIN + "/wlp_" + DOMAIN + "_*.txt"
 all_files = glob.glob(FILENAME)
 
 cooccurrence = {}

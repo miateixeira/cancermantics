@@ -39,7 +39,7 @@ class Sentence:
                 counts[token.lemma] = 1
         return counts
 
-    def print(self):
+    def printSentence(self):
         print("ARTICLE ID: " + str(self.id))
         for tok in self.sentence:
-            tok.print()
+            tok.printToken()
