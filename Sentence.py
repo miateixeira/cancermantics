@@ -39,6 +39,9 @@ class Sentence:
                 counts[token.lemma] = 1
         return counts
 
+    def get_length(self):
+        return len(self.sentence)
+
     def printSentence(self):
         print("ARTICLE ID: " + str(self.id))
         for tok in self.sentence:
