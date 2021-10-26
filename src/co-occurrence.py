@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 DOMAIN = input("Domain of interest (acad/news)? ")
 
-COCA_DIR = "../coca/"
+COCA_DIR = "../../coca/"
 WLP_FILENAME = COCA_DIR + "coca-wlp/" + DOMAIN + "/wlp_" + DOMAIN + "_*.txt"
 print(WLP_FILENAME)
 all_files = glob.glob(WLP_FILENAME)
@@ -57,7 +57,7 @@ def preprocessing(filename):
 #######################################################
 
 cooccurrence = {}
-word_count = 0
+word_count = []
 
 for filename in tqdm(all_files):
     print("Processing " + filename + "...")
@@ -66,28 +66,31 @@ for filename in tqdm(all_files):
     word_count += corpus.diagnose()
     cooccurrence = sum_update(cooccurrence, corpus.cooccurrence)
 
-import operator
-
-cooccurrencenorm = {k:(float(v)/word_count) for (k,v) in cooccurrence.items()}
-cooccurrencesorted = dict(sorted(cooccurrence.items(), key=operator.itemgetter(1), reverse=True))
-cooccurrencenormsorted = dict(sorted(cooccurrencenorm.items(), key=operator.itemgetter(1), reverse=True))
-
-import csv
-
-OUTPUT_FILENAME = "output/raw_counts_" + DOMAIN + ".csv"
-w = csv.writer(open(OUTPUT_FILENAME, "w"))
-for key, val in cooccurrencesorted.items():
-    w.writerow([key, val])
-
-OUTPUT_FILENAME_NORM = "output/norm_counts_" + DOMAIN + ".csv"
-w = csv.writer(open(OUTPUT_FILENAME_NORM, "w"))
-for key, val in cooccurrencenormsorted.items():
-    w.writerow([key, val])
-
-# import pprint
-
-# pprint.pprint(cooccurrencesorted, sort_dicts=False)
-
-# print("Word count: " + str(word_count))
-
-##############################################################
+avgSenLen = sum(word_count)/len(word_count)
+print("There are {} sentences with 'cancer' in it".format(len(word_count)))
+print("The average length is {}".format(avgSenLen))
+# import operator
+#
+# cooccurrencenorm = {k:(float(v)/word_count) for (k,v) in cooccurrence.items()}
+# cooccurrencesorted = dict(sorted(cooccurrence.items(), key=operator.itemgetter(1), reverse=True))
+# cooccurrencenormsorted = dict(sorted(cooccurrencenorm.items(), key=operator.itemgetter(1), reverse=True))
+#
+# import csv
+#
+# OUTPUT_FILENAME = "output/raw_counts_" + DOMAIN + ".csv"
+# w = csv.writer(open(OUTPUT_FILENAME, "w"))
+# for key, val in cooccurrencesorted.items():
+#     w.writerow([key, val])
+#
+# OUTPUT_FILENAME_NORM = "output/norm_counts_" + DOMAIN + ".csv"
+# w = csv.writer(open(OUTPUT_FILENAME_NORM, "w"))
+# for key, val in cooccurrencenormsorted.items():
+#     w.writerow([key, val])
+#
+# # import pprint
+#
+# # pprint.pprint(cooccurrencesorted, sort_dicts=False)
+#
+# # print("Word count: " + str(word_count))
+#
+# ##############################################################

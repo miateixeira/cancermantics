@@ -1,5 +1,5 @@
 def createSubgenreDict():
-    FILENAME = "../coca/sources.txt"
+    FILENAME = "../../coca/sources.txt"
 
     subgenreDict = {}
     with open(FILENAME, encoding='iso-8859-1') as f:
