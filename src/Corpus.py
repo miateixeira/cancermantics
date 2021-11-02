@@ -10,10 +10,12 @@ class Corpus:
 
     def diagnose(self):
         word_count = []
+        # word_count = 0
         for sent in self.corpus:
             if sent.diagnose():
                 counts = sent.get_counts()
                 self.cooccurrence = sum_update(self.cooccurrence, counts)
+                # word_count += sent.get_length()
                 word_count.append(sent.get_length())
                 # self.cooccurrence.update(counts)
         return word_count

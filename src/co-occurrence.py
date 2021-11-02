@@ -45,7 +45,8 @@ def preprocessing(filename):
         if prev_token == '.':
             if DOMAIN == "news":#(DOMAIN == "acad" and sentenceID == medID):
                 corpus.add_sentence(sentence)
-            if DOMAIN == "acad" and subgenreDict[sentenceID] == medID:
+            # if DOMAIN == "acad" and subgenreDict[sentenceID] == medID:
+            if DOMAIN == "acad" and subgenreDict[sentenceID] != medID:
                 corpus.add_sentence(sentence)
             # corpus.add_sentence(sentence)
             sentence = Sentence(line[0])
@@ -57,6 +58,7 @@ def preprocessing(filename):
 #######################################################
 
 cooccurrence = {}
+# word_count = 0
 word_count = []
 
 for filename in tqdm(all_files):
@@ -69,28 +71,29 @@ for filename in tqdm(all_files):
 avgSenLen = sum(word_count)/len(word_count)
 print("There are {} sentences with 'cancer' in it".format(len(word_count)))
 print("The average length is {}".format(avgSenLen))
+
 # import operator
-#
+# #
 # cooccurrencenorm = {k:(float(v)/word_count) for (k,v) in cooccurrence.items()}
 # cooccurrencesorted = dict(sorted(cooccurrence.items(), key=operator.itemgetter(1), reverse=True))
 # cooccurrencenormsorted = dict(sorted(cooccurrencenorm.items(), key=operator.itemgetter(1), reverse=True))
 #
 # import csv
 #
-# OUTPUT_FILENAME = "output/raw_counts_" + DOMAIN + ".csv"
+# OUTPUT_FILENAME = "../output/raw_counts_nonmed_" + DOMAIN + ".csv"
 # w = csv.writer(open(OUTPUT_FILENAME, "w"))
 # for key, val in cooccurrencesorted.items():
 #     w.writerow([key, val])
 #
-# OUTPUT_FILENAME_NORM = "output/norm_counts_" + DOMAIN + ".csv"
+# OUTPUT_FILENAME_NORM = "../output/norm_counts_nonmed_" + DOMAIN + ".csv"
 # w = csv.writer(open(OUTPUT_FILENAME_NORM, "w"))
 # for key, val in cooccurrencenormsorted.items():
 #     w.writerow([key, val])
-#
-# # import pprint
+
+# import pprint
 #
 # # pprint.pprint(cooccurrencesorted, sort_dicts=False)
 #
-# # print("Word count: " + str(word_count))
+# print("Word count: " + str(word_count))
 #
 # ##############################################################
