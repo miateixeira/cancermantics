@@ -4,28 +4,43 @@ class Corpus:
     def __init__(self):
         self.corpus = []
         self.cooccurrence = {}
+        self.sent_lens = []
+        self.cancer_sent_lens = []
+        self.cancer_count = 0
+        self.norm_factor = 0
 
     def add_sentence(self, sent):
         self.corpus.append(sent)
+        self.sent_lens.append(sent.get_length())
 
     def diagnose(self):
-        word_count = []
-        # word_count = 0
         for sent in self.corpus:
             if sent.diagnose():
                 counts = sent.get_counts()
                 self.cooccurrence = sum_update(self.cooccurrence, counts)
-                # word_count += sent.get_length()
-                word_count.append(sent.get_length())
-                # self.cooccurrence.update(counts)
-        return word_count
+
+                self.cancer_sent_lens.append(sent.get_length())
+                self.norm_factor += sent.get_length()
+                self.cancer_count += 1
 
     def printCorpus(self):
         for sent in self.corpus:
             sent.printSentence()
 
-    def sent_count(self):
-        print(len(self.corpus))
+    def getNumSens(self):
+        return len(self.corpus)
+
+    def getSentLens(self):
+        return self.sent_lens
+
+    def getCancerSentLens(self):
+        return self.cancer_sent_lens
+
+    def getCancerCount(self):
+        return self.cancer_count
+
+    def getNormFactor(self):
+        return self.norm_factor
 
     def get_pos_tags(self):
         pos_tags =[]

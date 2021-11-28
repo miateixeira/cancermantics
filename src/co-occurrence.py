@@ -1,99 +1,155 @@
-from Token import Token
-from Sentence import Sentence
 from Corpus import Corpus
+from Preprocessing import preprocessing
 from helper import *
 from subgenreDict import createSubgenreDict
 import glob
 from tqdm import tqdm
+import sys, getopt
 
 #######################################################
 
-DOMAIN = input("Domain of interest (acad/news)? ")
-
+# relative path to the directory where all the coca files are
 COCA_DIR = "../../coca/"
-WLP_FILENAME = COCA_DIR + "coca-wlp/" + DOMAIN + "/wlp_" + DOMAIN + "_*.txt"
-print(WLP_FILENAME)
-all_files = glob.glob(WLP_FILENAME)
+# relative path to output dir
+OUTPUT_DIR = "../output/"
 
-# this comes from coca-subgenres.txt
 subgenreDict = createSubgenreDict()
-medID = "151"
+# these values come from coca-subgenres.txt
+newsIDs = [i for i in range(135, 143)]
+acadIDs = [i for i in range(144, 153)]
+medIDs = [150, 151]
 
-#######################################################
+def main(argv):
+    domain = ''
+    complement = False
+    normalize = False
+    subgenreIDs = []
 
-def preprocessing(filename):
-    f = open(filename, encoding='windows-1252')
-    raw_data = f.readlines()
-    prev_token = None
-    sentenceID = raw_data[0].split('\t')[0]
+    try:
+        opts, args = getopt.getopt(argv,"hd:cn",["domain=",
+                                                 "complement=",
+                                                 "normalize="])
+    except getopt.GetoptError:
+        print('co-occurrence.py -d <domain> -c -n')
+        sys.exit(2)
 
-    sentence = Sentence(sentenceID)
-    # sentence = Sentence(raw_data[0].split('\t')[0])
+    # parse command line arguments
+    for opt, arg in opts:
+        if opt == '-h':
+            print("co-occurrence.py -d <domain> -c -n")
+            sys.exit()
+        elif opt in ("-d", "--domain"):
+            domain = arg
+        elif opt in ("-c", "--complement"):
+            # complement option is only valid for the acad domain
+            if domain == 'acad':
+                complement = True
+        elif opt in ("-n", "--normalize"):
+            normalize = True
 
-    for line in raw_data:
-        line = line.rstrip().split('\t')
-        if len(line) < 2:
-            continue
-        if '@' in line[1]:
-            continue
-        if '#' in line[1]:
-            continue
+    # set the correct target subgenre IDs
+    if domain == 'acad':
+        if complement:
+            subgenreIDs = [i for i in acadIDs if i not in medIDs]
+        else:
+            subgenreIDs = [i for i in acadIDs if i in medIDs]
+    elif domain == 'news':
+        subgenreIDs = newsIDs
+    else:
+        print("\nInvalid domain\n Valid domains are 'acad' and 'news'")
+        sys.exit()
 
-        token = Token(line[1], line[2], line[3])
-        sentence.add_token(token)
+    # use glob to find all the relevant files to be processed
+    filename_template = COCA_DIR + "coca-wlp/" + domain + "/wlp_" + domain + "_*.txt"
+    print("\nSearching for files using the template\n\t\t{}".format(filename_template))
+    try:
+        all_files = glob.glob(filename_template)
+    except:
+        print("\nCould not find appropriate files.")
+        sys.exit()
 
-        if prev_token == '.':
-            if DOMAIN == "news":#(DOMAIN == "acad" and sentenceID == medID):
-                corpus.add_sentence(sentence)
-            # if DOMAIN == "acad" and subgenreDict[sentenceID] == medID:
-            if DOMAIN == "acad" and subgenreDict[sentenceID] != medID:
-                corpus.add_sentence(sentence)
-            # corpus.add_sentence(sentence)
-            sentence = Sentence(line[0])
+    ###################################################
 
-        prev_token = token.lemma
+    # Initialize statistics variables
+    cooccurrence     = {}
+    cancer_count     = 0
+    sent_lens        = []
+    cancer_sent_lens = []
 
-    f.close()
+    for filename in tqdm(all_files):
+        print("\nProcessing " + filename + "...")
 
-#######################################################
+        # Create a new corpus
+        corpus = Corpus()
 
-cooccurrence = {}
-# word_count = 0
-word_count = []
+        # Process the data in this file
+        preprocessing(filename, corpus, subgenreDict, subgenreIDs)
+        corpus.diagnose()
 
-for filename in tqdm(all_files):
-    print("Processing " + filename + "...")
-    corpus = Corpus()
-    preprocessing(filename)
-    word_count += corpus.diagnose()
-    cooccurrence = sum_update(cooccurrence, corpus.cooccurrence)
+        # Update cooccurrence dictionary with new counts
+        cooccurrence = sum_update(cooccurrence, corpus.cooccurrence)
 
-avgSenLen = sum(word_count)/len(word_count)
-print("There are {} sentences with 'cancer' in it".format(len(word_count)))
-print("The average length is {}".format(avgSenLen))
+        # Update statistics
+        cancer_count     += corpus.getCancerCount()
+        sent_lens        += corpus.getSentLens()
+        cancer_sent_lens += corpus.getCancerSentLens()
 
-# import operator
-# #
-# cooccurrencenorm = {k:(float(v)/word_count) for (k,v) in cooccurrence.items()}
-# cooccurrencesorted = dict(sorted(cooccurrence.items(), key=operator.itemgetter(1), reverse=True))
-# cooccurrencenormsorted = dict(sorted(cooccurrencenorm.items(), key=operator.itemgetter(1), reverse=True))
-#
-# import csv
-#
-# OUTPUT_FILENAME = "../output/raw_counts_nonmed_" + DOMAIN + ".csv"
-# w = csv.writer(open(OUTPUT_FILENAME, "w"))
-# for key, val in cooccurrencesorted.items():
-#     w.writerow([key, val])
-#
-# OUTPUT_FILENAME_NORM = "../output/norm_counts_nonmed_" + DOMAIN + ".csv"
-# w = csv.writer(open(OUTPUT_FILENAME_NORM, "w"))
-# for key, val in cooccurrencenormsorted.items():
-#     w.writerow([key, val])
+    ###################################################
 
-# import pprint
-#
-# # pprint.pprint(cooccurrencesorted, sort_dicts=False)
-#
-# print("Word count: " + str(word_count))
-#
-# ##############################################################
+    # Set the filename for the output statistics about the corpus:
+    # ../output/acad_medical_statistics.txt
+    # ../output/acad_non-medical_statistics.txt
+    # ../output/news_statistics.txt
+    specialization = ""
+    if complement:
+        specialization = "_non-medical"
+    else:
+        if domain == "acad": specialization = "_medical"
+
+    statistics_output = OUTPUT_DIR + domain + specialization + "_statistics.txt"
+
+    # Populate the statistics to be written to file
+    statistics = []
+    statistics.append("The corpus has a total of {} sentences".format(len(sent_lens)))
+    statistics.append("The total number of words in the corpus is {}".format(sum(sent_lens)))
+    statistics.append("The average length is {}".format(sum(sent_lens) / len(sent_lens)))
+    statistics.append("There are {} sentences with 'cancer' in it".format(cancer_count))
+    statistics.append("The average length of 'cancer' sentences is {}".format(sum(cancer_sent_lens) / len(cancer_sent_lens)))
+
+    # Write statistics to file
+    with open(statistics_output, "w+") as f:
+        f.write('\n'.join(statistics) + '\n')
+
+    ###################################################
+
+    import operator
+
+    # Set the filename for the output co-occurrence counts:
+    # ../output/acad_medical_raw_counts.csv
+    # ../output/acad_medical_norm_counts.csv
+    # ../output/acad_non-medical_raw_counts.csv
+    # ../output/acad_non-medical_norm_counts.csv
+    # ../output/news_raw_counts.csv
+    # ../output/news_norm_counts.csv
+    count_type = "_norm" if normalize else "_raw"
+    output_filename = OUTPUT_DIR + domain + specialization + count_type + "_counts.csv"
+
+    # sort items in the dicts, optionally normalize
+    if normalize:
+        cooccurrencenorm = {k:(float(v)/sum(cancer_sent_lens)) for (k,v) in cooccurrence.items()}
+        output_sorted = dict(sorted(cooccurrencenorm.items(), key=operator.itemgetter(1), reverse=True))
+    else:
+        output_sorted = dict(sorted(cooccurrence.items(), key=operator.itemgetter(1), reverse=True))
+
+    import csv
+
+    # write co-occurrence counts to file
+    w = csv.writer(open(output_filename, "w"))
+    for key, val in output_sorted.items():
+        w.writerow([key, val])
+
+
+##############################################################
+
+if __name__ == "__main__":
+    main(sys.argv[1:])

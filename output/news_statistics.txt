@@ -1,0 +1,5 @@
+The corpus has a total of 5986077 sentences
+The total number of words in the corpus is 136295157
+The average length is 22.768694255018772
+There are 10341 sentences with 'cancer' in it
+The average length of 'cancer' sentences is 30.86229571608162
